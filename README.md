@@ -54,3 +54,4 @@ logger:
   logs:
     custom_components.amplifi: debug
 ```
+ssh push test
