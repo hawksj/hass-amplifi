@@ -121,7 +121,7 @@ class AmplifiDataUpdateCoordinator(DataUpdateCoordinator):
 
         return self._router_mac_addr
 
-    def async_stop_refresh(self):
+    def _async_stop_refresh(self):
         super._async_stop_refresh()
 
     @property
