@@ -49,6 +49,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         )
                     ]
                 )
+                
+        for device in coordinator.ethernet_devices:
+            eth_device_unique_id = f"{DOMAIN}_eth_{device}"
+            if eth_device_unique_id not in hass.data[DOMAIN][config_entry.entry_id][ENTITIES]:
+                async_add_entities(
+                    [
+                        AmplifiEthernetDeviceTracker(
+                            coordinator,
+                            device,
+                            config_entry,
+                        )
+                    ]
+                )
 
     @callback
     def async_unsub_discover_device_tracker():
@@ -193,14 +206,33 @@ class AmplifiEthernetDeviceTracker(CoordinatorEntity, ScannerEntity):
     _is_wan = False
     unique_id = None
 
-    def __init__(self, coordinator: AmplifiDataUpdateCoordinator, port, config_entry):
+    def __init__(self, coordinator: AmplifiDataUpdateCoordinator, unique_id, config_entry):
         """Initialize amplifi ethernet device tracker."""
         super().__init__(coordinator)
-        self._port = port
-        self._data_key = f"eth-{port}"
-        self.unique_id = f"{DOMAIN}_eth_port_{self._port}"
-        self._data = coordinator.ethernet_ports[f"{self._data_key}"]
-        self.config_entry = config_entry
+        if isinstance(unique_id, int) and 0 <= unique_id <= 4:
+            self._port = unique_id
+            self._data_key = f"eth-{unique_id}"
+            self.unique_id = f"{DOMAIN}_eth_port_{self._port}"
+            self._data = coordinator.ethernet_ports[f"{self._data_key}"]
+            self.config_entry = config_entry
+            self._description = f"Ethernet Port {self._port}"
+        else:
+            self.unique_id = f"{DOMAIN}_eth_{self.unique_id}"
+            self._data = coordinator.ethernet_devices[f"{unique_id}"]
+            self.config_entry = config_entry
+            
+            if self._data is not None and "Description" in self._data:
+                self._name = f"{DOMAIN}_{self._data['Description']}"
+                self._description = self._data['description']
+            elif self._data is not None and "HostName" in self._data:
+                self._name = f"{DOMAIN}_{self._data['HostName']}"
+                self._description = self._data['host_name']
+            elif self._data is not None and "Address" in self._data:
+                self._name = f"{DOMAIN}_{self._data['Address']}"
+                self._description = self._data['ip']
+            else:
+                self._name = f"{DOMAIN}_{self.unique_id}"
+                self._description = f"{self.unique_id}"
 
     @property
     def name(self):
