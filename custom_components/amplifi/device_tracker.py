@@ -150,7 +150,7 @@ class AmplifiWifiDeviceTracker(CoordinatorEntity, ScannerEntity):
         """Return if the entity should be enabled when first added to the entity registry."""
         if self.config_entry.data.get(CONF_ENABLE_NEW_DEVICES, False):
             return True
-
+        
         return False
 
     def update(self):
