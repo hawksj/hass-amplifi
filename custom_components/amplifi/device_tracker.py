@@ -107,6 +107,7 @@ class AmplifiWifiDeviceTracker(CoordinatorEntity, ScannerEntity):
             self._description = self._data['Address']
         else:
             self._name = f"{DOMAIN}_{self.unique_id}"
+            self._description = self.unique_id.upper()
 
         self._name = re.sub("[^0-9a-zA-Z]+", "_", self._name).lower()
         # Override the entity_id so we can provide a better friendly name
@@ -293,7 +294,8 @@ class AmplifiEthernetDeviceTracker(CoordinatorEntity, ScannerEntity):
     @property
     def mac_address(self):
         """Return the mac address of the device."""
-        return self.unique_id
+        if self._is_device:
+            return self.unique_id
 
     @property
     def extra_state_attributes(self):
@@ -301,6 +303,17 @@ class AmplifiEthernetDeviceTracker(CoordinatorEntity, ScannerEntity):
         if self.coordinator.last_update_success and self._data is not None:
             return {**self._data, "last_seen": datetime.now().isoformat()}
         return {}
+
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return if the entity should be enabled when first added to the entity registry."""
+        if self._is_device:
+            if self.config_entry.data.get(CONF_ENABLE_NEW_DEVICES, False):
+                return True
+            else:
+                return False
+        else:
+            return True
 
     def update(self):
         _LOGGER.debug(f"entity={self.unique_id} update() was called")
